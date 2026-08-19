@@ -1,6 +1,6 @@
 # Alert rules
 
-Eleven rules in three groups. Every one of them exists because it answers a question I actually
+Sixteen rules in four groups. Every one of them exists because it answers a question I actually
 had, not because it looked good on a dashboard.
 
 ## Availability
@@ -56,6 +56,31 @@ Memory uses `MemAvailable` rather than `MemFree`. Linux uses free memory for pag
 and comes straight back looks fine in `docker ps`, and the restart counter is the only thing that
 gives it away.
 
+## Backups
+
+| Alert | Fires when | For | Severity |
+|---|---|---|---|
+| `BackupFailed` | the job exited non zero | 5m | critical |
+| `BackupTooOld` | no successful run in over 26 hours | 15m | critical |
+| `BackupMetricsMissing` | no backup metrics exist at all | 30m | warning |
+| `BackupProducedNothing` | a successful run wrote zero archives | 15m | warning |
+| `BackupShrankSharply` | under half the weekly average size | 1h | warning |
+
+These read a textfile collector file written by my backup job, so no exporter is involved. The
+job writes `/var/lib/node_exporter/textfile_collector/backup_homelab.prom` and node exporter
+picks it up on the next scrape.
+
+26 hours rather than 24 gives a nightly job room for the randomised delay on its timer without
+alerting every time it starts a few minutes late.
+
+`BackupProducedNothing` and `BackupShrankSharply` are the two that catch the failure mode nobody
+plans for. A job that crashes is obvious. A job that exits 0 having archived an empty directory,
+because someone renamed the path it backs up, looks perfectly healthy right up until the restore.
+
+```promql
+backup_last_run_bytes < 0.5 * avg_over_time(backup_last_run_bytes[7d]) and backup_last_run_bytes > 0
+```
+
 ## Routing and noise control
 
 Alertmanager groups by `alertname` and `instance`, so one host going down produces one
@@ -88,12 +113,32 @@ script itself, which parsed the `/api/v1/alerts` JSON with `grep` and reported "
 five minutes while the alert was firing perfectly well. Querying `ALERTS{alertstate="firing"}`
 through the query API instead of scraping JSON by hand is both shorter and correct.
 
-## Validating the config before restarting anything
+## Unit testing the rules
+
+Breaking things on purpose is the honest test, but it takes four minutes and needs the stack
+running. The faster check runs the rules against synthetic time series:
 
 ```bash
 ./scripts/validate.sh
 ```
 
-Runs `promtool check config`, `promtool check rules` and `amtool check-config` inside throwaway
-containers. Prometheus refuses to start on a bad rule file, so it is worth catching before it
-takes the whole stack down.
+That includes `promtool test rules prometheus/tests/alert_tests.yml`, which feeds made up series
+into the real rule files and asserts exactly what fires and when:
+
+- `TargetDown` is silent at 3 minutes and firing at 5, which is the `for: 2m` hold time proving
+  itself rather than being assumed
+- a target that never goes down produces no alert at all, because a rule that fires on healthy
+  input is worse than no rule
+- a filesystem at 12 percent free alerts, one at 60 percent does not
+- a backup whose last success is more than 26 hours old alerts, a recent one does not
+- with no backup metrics present at all, `BackupMetricsMissing` fires
+
+The annotations are asserted too, so a rule cannot quietly start rendering
+`{{ $labels.instance }}` as an empty string without a test failing.
+
+## Validating the config before restarting anything
+
+`./scripts/validate.sh` also runs `promtool check config`, `promtool check rules` and
+`amtool check-config` inside throwaway containers. Prometheus refuses to start on a bad rule
+file, so it is worth catching before it takes the whole stack down. The same three checks plus
+the unit tests run in CI on every push.

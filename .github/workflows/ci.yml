@@ -1,0 +1,80 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  config:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check the prometheus config and rules
+        run: |
+          docker run --rm -v "$PWD/prometheus:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v2.54.1 \
+            check config /etc/prometheus/prometheus.yml
+          docker run --rm -v "$PWD/prometheus:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v2.54.1 \
+            check rules /etc/prometheus/rules/infrastructure.yml /etc/prometheus/rules/backups.yml
+
+      - name: Check the alertmanager config
+        run: |
+          docker run --rm -v "$PWD/alertmanager:/etc/alertmanager:ro" \
+            --entrypoint amtool prom/alertmanager:v0.27.0 \
+            check-config /etc/alertmanager/alertmanager.yml
+
+      - name: Check the grafana dashboard is valid json
+        run: python -c "import json; d=json.load(open('grafana/dashboards/homelab.json')); print(len(d['panels']), 'panels')"
+
+      - name: Check the compose file
+        run: docker compose config -q
+
+  rules:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Unit test the alert rules
+        run: |
+          docker run --rm -v "$PWD/prometheus:/etc/prometheus:ro" \
+            --entrypoint promtool prom/prometheus:v2.54.1 \
+            test rules /etc/prometheus/tests/alert_tests.yml
+
+  stack:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bring the stack up
+        run: docker compose up -d
+
+      - name: Every target has to be up
+        run: |
+          for i in $(seq 1 30); do
+            total=$(curl -sf "http://localhost:9090/api/v1/targets?state=active" | python -c "import json,sys; d=json.load(sys.stdin)['data']['activeTargets']; print(len(d))" || echo 0)
+            up=$(curl -sf "http://localhost:9090/api/v1/targets?state=active" | python -c "import json,sys; d=json.load(sys.stdin)['data']['activeTargets']; print(sum(1 for t in d if t['health']=='up'))" || echo 0)
+            echo "$up of $total targets up"
+            if [ "$total" -gt 0 ] && [ "$up" = "$total" ]; then exit 0; fi
+            sleep 5
+          done
+          docker compose logs prometheus
+          exit 1
+
+      - name: Grafana has the provisioned dashboard
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf -u admin:admin "http://localhost:3000/api/search?query=Homelab" | grep -q "Homelab overview"; then exit 0; fi
+            sleep 5
+          done
+          docker compose logs grafana
+          exit 1
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs

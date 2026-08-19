@@ -1,5 +1,7 @@
 # Homelab monitoring
 
+[![ci](https://github.com/Alex-2rios/homelab-monitoring/actions/workflows/ci.yml/badge.svg)](https://github.com/Alex-2rios/homelab-monitoring/actions/workflows/ci.yml)
+
 Prometheus, Grafana, Alertmanager and three exporters, watching my own machines. One
 `docker compose up` and you have metrics, dashboards and alerts that have been tested by actually
 breaking things.
@@ -46,8 +48,20 @@ does not lose the dashboard, and the diff shows up in git.
 
 ## Alerts
 
-Eleven rules across availability, host and container health. The full table with the reasoning
-behind each threshold is in [docs/alerts.md](docs/alerts.md).
+Sixteen rules across availability, host health, containers and backups. The full table with the
+reasoning behind each threshold is in [docs/alerts.md](docs/alerts.md).
+
+They are unit tested, which is the part I would actually argue for in an interview:
+
+```bash
+./scripts/validate.sh
+```
+
+That runs `promtool test rules` over `prometheus/tests/alert_tests.yml`, which feeds synthetic
+time series into the real rule files and asserts what fires and when. It checks that `TargetDown`
+stays quiet at three minutes and fires at five, that a healthy target never alerts at all, and
+that a backup which has not succeeded in over a day is caught. An alert rule is code, and a rule
+that can never fire looks exactly like one that works.
 
 The one I would point at first:
 
@@ -94,6 +108,25 @@ I wrote this because two of my rules were silently broken. They looked correct, 
 and they could never have fired: one matched a label the metric does not carry, and one used a
 metric name that changed between exporter versions. You cannot find that by reading YAML.
 
+## Watching the backups
+
+`node-exporter` reads `./textfile` as a textfile collector directory, so anything that drops a
+`.prom` file there becomes a metric. My
+[backup-automation](https://github.com/Alex-2rios/backup-automation) job writes one after every
+run, and `prometheus/rules/backups.yml` turns it into five alerts:
+
+| Alert | Fires when |
+|---|---|
+| `BackupFailed` | the job exited non zero |
+| `BackupTooOld` | nothing has succeeded in over 26 hours |
+| `BackupMetricsMissing` | no backup metrics exist at all |
+| `BackupProducedNothing` | a run reported success and wrote zero archives |
+| `BackupShrankSharply` | the backup is half the size of its weekly average |
+
+The last two are the interesting ones. A backup job that fails loudly is easy. A backup job that
+returns 0 while quietly archiving nothing is how people find out their restores are empty, a year
+later.
+
 ## Adding a host
 
 Metrics from another machine, once node-exporter is running on it:
@@ -113,6 +146,11 @@ you get availability, response time and certificate expiry for free.
 
 - Alerts you have never fired on purpose are decoration. Testing them found two rules that could
   not have worked, and I would not have known until the night I needed them.
+- `promtool test rules` turned alerting from something I hoped was right into something CI
+  checks on every push. Writing the tests also forced me to be precise about the `for` durations,
+  because the test asserts the exact minute an alert is allowed to fire.
+- A textfile collector is the cheapest integration point in Prometheus. Any script that can write
+  a file can produce metrics, no exporter to write, no port to expose.
 - `MemAvailable` and not `MemFree`. Linux fills free memory with page cache by design, so
   `MemFree` on a perfectly healthy server looks like an emergency.
 - `predict_linear` over a six hour window turned a noisy static threshold into an alert that has
