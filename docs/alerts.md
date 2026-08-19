@@ -78,11 +78,15 @@ than that trains you to ignore it.
 ```
 
 The script stops the exporter, watches the Prometheus API until the alert goes pending and then
-firing, tells you to look at Alertmanager, restarts the container and waits for it to resolve.
+firing, confirms Alertmanager received it, restarts the container and waits for it to resolve.
+On my machine: pending at 30 s, firing at 120 s, in Alertmanager immediately, cleared 30 s after
+the exporter came back.
 
 An alert rule that has never fired is a hypothesis, not a safety net. Writing this script found
-two mistakes in my rules: a label that did not exist on the metric I was matching, and a `for`
-duration long enough that I assumed the rule was broken when it was only slow.
+two mistakes: a rule matching a label the metric does not carry, and the first version of the
+script itself, which parsed the `/api/v1/alerts` JSON with `grep` and reported "no alert" for
+five minutes while the alert was firing perfectly well. Querying `ALERTS{alertstate="firing"}`
+through the query API instead of scraping JSON by hand is both shorter and correct.
 
 ## Validating the config before restarting anything
 

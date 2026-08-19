@@ -65,9 +65,30 @@ before.
 ./scripts/trigger-alert.sh node-exporter
 ```
 
-Stops the exporter, polls the Prometheus API until the alert goes pending and then firing, waits
-for you to look at Alertmanager, restarts it and confirms it resolves. Roughly four minutes end
-to end because the rule has a deliberate two minute delay.
+Stops the exporter, polls the Prometheus API until the alert goes pending and then firing, checks
+Alertmanager actually received it, restarts the container and confirms it clears:
+
+```
+stopping the node-exporter container
+
+waiting for the rule to go pending, scrapes are every 15s
+  pending after 30s
+
+waiting for it to fire, the rule holds for 2m first
+  firing after 120s
+
+checking alertmanager received it
+  alertmanager has the alert after 0s
+
+starting node-exporter again
+
+waiting for the alert to clear
+  none after 30s
+```
+
+Thirty seconds to notice, two minutes to fire, thirty seconds to clear. Those numbers are the
+whole reason to run the drill: now I know what the detection window actually is instead of
+assuming it from the config.
 
 I wrote this because two of my rules were silently broken. They looked correct, they parsed fine,
 and they could never have fired: one matched a label the metric does not carry, and one used a
