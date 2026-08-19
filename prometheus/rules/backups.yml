@@ -1,0 +1,60 @@
+groups:
+  - name: backups
+    rules:
+      - alert: BackupFailed
+        expr: backup_last_run_exit_code != 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup job {{ $labels.backup_job }} finished with exit code {{ $value }}"
+          description: >-
+            2 means an archive failed verification, 4 a source was missing,
+            5 the second copy failed, 6 the offsite push failed.
+
+      - alert: BackupTooOld
+        expr: (time() - backup_last_success_timestamp_seconds) / 3600 > 26
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backup job {{ $labels.backup_job }} last succeeded {{ $value | printf \"%.0f\" }} hours ago"
+          description: >-
+            The nightly timer should produce a successful run every 24 hours.
+            Past 26 the job is either failing or not running at all.
+
+      - alert: BackupMetricsMissing
+        expr: absent(backup_last_run_timestamp_seconds)
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "No backup metrics are being reported at all"
+          description: >-
+            The textfile collector has nothing to read. Either the backup job has
+            never run on this host or it can no longer write to METRICS_DIR.
+
+      - alert: BackupProducedNothing
+        expr: backup_archives_written == 0 and backup_last_run_exit_code == 0
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup job {{ $labels.backup_job }} reported success without writing an archive"
+          description: >-
+            A run that succeeds and produces zero archives usually means SOURCES
+            is empty or every path in it was excluded.
+
+      - alert: BackupShrankSharply
+        expr: |
+          backup_last_run_bytes
+            < 0.5 * avg_over_time(backup_last_run_bytes[7d])
+          and backup_last_run_bytes > 0
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Backup {{ $labels.backup_job }} is half the size it usually is"
+          description: >-
+            Currently {{ $value | humanize1024 }}B against the weekly average.
+            A backup that suddenly gets much smaller is the quiet kind of failure.
