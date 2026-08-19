@@ -27,7 +27,14 @@ echo "checking alert rules"
 docker run --rm \
     -v "$(mount_path "$ROOT/prometheus"):/etc/prometheus:ro" \
     --entrypoint promtool \
-    "$PROMETHEUS_IMAGE" check rules /etc/prometheus/rules/infrastructure.yml
+    "$PROMETHEUS_IMAGE" check rules /etc/prometheus/rules/infrastructure.yml /etc/prometheus/rules/backups.yml
+
+echo
+echo "unit testing the alert rules"
+docker run --rm \
+    -v "$(mount_path "$ROOT/prometheus"):/etc/prometheus:ro" \
+    --entrypoint promtool \
+    "$PROMETHEUS_IMAGE" test rules /etc/prometheus/tests/alert_tests.yml
 
 echo
 echo "checking alertmanager config"
