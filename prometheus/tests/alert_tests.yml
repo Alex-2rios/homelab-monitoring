@@ -24,6 +24,7 @@ tests:
               job: node
               instance: node-exporter:9100
             exp_annotations:
+              runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#targetdown"
               summary: "node target node-exporter:9100 is down"
               description: "Prometheus has not been able to scrape node-exporter:9100 for 2 minutes."
 
@@ -57,6 +58,7 @@ tests:
               job: blackbox-http
               instance: https://github.com
             exp_annotations:
+              runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#endpointdown"
               summary: "https://github.com is not responding to probes"
               description: "The blackbox probe for https://github.com has failed for 3 minutes."
 
@@ -82,6 +84,7 @@ tests:
               mountpoint: /
               fstype: ext4
             exp_annotations:
+              runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#hostdiskspacelow"
               summary: "/ on host is 12 percent free"
               description: "Clean it up or grow the volume."
 
@@ -116,6 +119,7 @@ tests:
               severity: critical
               backup_job: homelab
             exp_annotations:
+              runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backupfailed"
               summary: "Backup job homelab finished with exit code 5"
               description: "2 means an archive failed verification, 4 a source was missing, 5 the second copy failed, 6 the offsite push failed."
 
@@ -133,6 +137,7 @@ tests:
               severity: critical
               backup_job: homelab
             exp_annotations:
+              runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backuptooold"
               summary: "Backup job homelab last succeeded 27 hours ago"
               description: "The nightly timer should produce a successful run every 24 hours. Past 26 the job is either failing or not running at all."
 
@@ -166,5 +171,6 @@ tests:
           - exp_labels:
               severity: warning
             exp_annotations:
+              runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backupmetricsmissing"
               summary: "No backup metrics are being reported at all"
               description: "The textfile collector has nothing to read. Either the backup job has never run on this host or it can no longer write to METRICS_DIR."

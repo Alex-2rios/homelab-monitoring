@@ -27,7 +27,7 @@ echo "checking alert rules"
 docker run --rm \
     -v "$(mount_path "$ROOT/prometheus"):/etc/prometheus:ro" \
     --entrypoint promtool \
-    "$PROMETHEUS_IMAGE" check rules /etc/prometheus/rules/infrastructure.yml /etc/prometheus/rules/backups.yml
+    "$PROMETHEUS_IMAGE" check rules /etc/prometheus/rules/infrastructure.yml /etc/prometheus/rules/backups.yml /etc/prometheus/rules/recording.yml
 
 echo
 echo "unit testing the alert rules"
