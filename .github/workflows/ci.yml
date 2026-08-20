@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check the prometheus config and rules
         run: |
@@ -37,7 +37,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Unit test the alert rules
         run: |
@@ -53,7 +53,7 @@ jobs:
       GRAFANA_PASSWORD: ${{ secrets.GRAFANA_PASSWORD || 'ci-throwaway-password' }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Bring the stack up
         run: docker compose up -d
