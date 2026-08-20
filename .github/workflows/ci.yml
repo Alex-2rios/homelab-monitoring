@@ -19,7 +19,7 @@ jobs:
             check config /etc/prometheus/prometheus.yml
           docker run --rm -v "$PWD/prometheus:/etc/prometheus:ro" \
             --entrypoint promtool prom/prometheus:v2.54.1 \
-            check rules /etc/prometheus/rules/infrastructure.yml /etc/prometheus/rules/backups.yml
+            check rules /etc/prometheus/rules/infrastructure.yml /etc/prometheus/rules/backups.yml /etc/prometheus/rules/recording.yml
 
       - name: Check the alertmanager config
         run: |

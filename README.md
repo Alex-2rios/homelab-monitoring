@@ -63,6 +63,10 @@ stays quiet at three minutes and fires at five, that a healthy target never aler
 that a backup which has not succeeded in over a day is caught. An alert rule is code, and a rule
 that can never fire looks exactly like one that works.
 
+Every alert carries a `runbook_url` pointing at [docs/runbooks.md](docs/runbooks.md), so the
+notification lands on a page that says what to check first and how to fix it, rather than on a
+graph somebody has to interpret at three in the morning.
+
 The one I would point at first:
 
 ```promql
@@ -164,6 +168,24 @@ you get availability, response time and certificate expiry for free.
 - On Docker Desktop, node-exporter reports the Linux VM rather than the Windows host, so the
   numbers are real but they are the VM's. On the Ubuntu box where this actually lives, the mounts
   in the compose file give it the real host.
+
+## Working on this
+
+```bash
+make help
+```
+
+The usual ones: `make up, make validate, make drill, make reload, make down`.
+
+Every push runs the CI workflow described above. A second workflow, `security.yml`, runs weekly
+and on every push: it scans the history for committed secrets with gitleaks and checks the
+compose file for misconfiguration.
+
+Dependabot opens pull requests for the GitHub Actions and the dependencies once a week.
+
+Line endings are pinned to LF through `.gitattributes`, because half of this was written on
+Windows and shell scripts with carriage returns fail on Linux in a way that is genuinely
+confusing the first time.
 
 ## Next
 
