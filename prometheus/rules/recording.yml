@@ -1,0 +1,43 @@
+groups:
+  - name: node_recording
+    interval: 30s
+    rules:
+      - record: instance:node_cpu_utilisation:rate5m
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+
+      - record: instance:node_memory_utilisation:ratio
+        expr: 1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)
+
+      - record: instance:node_load1_per_cpu:ratio
+        expr: |
+          node_load1
+            / on (instance) count by (instance) (count by (instance, cpu) (node_cpu_seconds_total))
+
+      - record: instance_mountpoint:node_filesystem_usage:ratio
+        expr: |
+          1 - (node_filesystem_avail_bytes{fstype!~"tmpfs|overlay|squashfs"}
+               / node_filesystem_size_bytes{fstype!~"tmpfs|overlay|squashfs"})
+
+      - record: instance_device:node_network_receive_bits:rate5m
+        expr: rate(node_network_receive_bytes_total{device!~"lo|veth.*"}[5m]) * 8
+
+      - record: instance_device:node_network_transmit_bits:rate5m
+        expr: rate(node_network_transmit_bytes_total{device!~"lo|veth.*"}[5m]) * 8
+
+  - name: container_recording
+    interval: 30s
+    rules:
+      - record: name:container_cpu_utilisation:rate5m
+        expr: sum by (name) (rate(container_cpu_usage_seconds_total{name!=""}[5m])) * 100
+
+      - record: name:container_memory_usage:bytes
+        expr: sum by (name) (container_memory_usage_bytes{name!=""})
+
+  - name: probe_recording
+    interval: 30s
+    rules:
+      - record: instance:probe_success:ratio_1h
+        expr: avg_over_time(probe_success[1h])
+
+      - record: instance:probe_duration:p95_1h
+        expr: quantile_over_time(0.95, probe_duration_seconds[1h])

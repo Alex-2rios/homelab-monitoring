@@ -7,6 +7,7 @@ groups:
         labels:
           severity: critical
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#targetdown"
           summary: "{{ $labels.job }} target {{ $labels.instance }} is down"
           description: "Prometheus has not been able to scrape {{ $labels.instance }} for 2 minutes."
 
@@ -16,6 +17,7 @@ groups:
         labels:
           severity: critical
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#endpointdown"
           summary: "{{ $labels.instance }} is not responding to probes"
           description: "The blackbox probe for {{ $labels.instance }} has failed for 3 minutes."
 
@@ -25,6 +27,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#endpointslow"
           summary: "{{ $labels.instance }} is answering slowly"
           description: "Probe duration has been above 2 s for 10 minutes, currently {{ $value | humanizeDuration }}."
 
@@ -34,6 +37,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#certificateexpiringsoon"
           summary: "TLS certificate for {{ $labels.instance }} expires in {{ $value | printf \"%.0f\" }} days"
           description: "Renew it before it expires, three weeks of warning should be enough."
 
@@ -45,6 +49,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#hosthighcpu"
           summary: "CPU on {{ $labels.instance }} above 85 percent"
           description: "Sustained for 10 minutes, currently {{ $value | printf \"%.0f\" }} percent."
 
@@ -54,6 +59,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#hosthighmemory"
           summary: "Memory on {{ $labels.instance }} above 90 percent"
           description: "Available memory is down to {{ $value | printf \"%.0f\" }} percent used."
 
@@ -65,6 +71,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#hostdiskspacelow"
           summary: "{{ $labels.mountpoint }} on {{ $labels.instance }} is {{ $value | printf \"%.0f\" }} percent free"
           description: "Clean it up or grow the volume."
 
@@ -77,6 +84,7 @@ groups:
         labels:
           severity: critical
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#hostdiskwillfill"
           summary: "{{ $labels.mountpoint }} on {{ $labels.instance }} fills up within 24 hours"
           description: "Based on the last 6 hours of growth. This is the one that actually saves you."
 
@@ -86,6 +94,7 @@ groups:
         labels:
           severity: info
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#hostunexpectedreboot"
           summary: "{{ $labels.instance }} rebooted"
           description: "Uptime is under 5 minutes. If nobody planned this, find out why."
 
@@ -97,6 +106,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#containerrestartloop"
           summary: "Container {{ $labels.name }} keeps restarting"
           description: "More than two restarts in the last 15 minutes."
 
@@ -108,5 +118,6 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#containerhighmemory"
           summary: "Container {{ $labels.name }} is near its memory limit"
           description: "At {{ $value | printf \"%.0f\" }} percent of the limit, the OOM killer is next."

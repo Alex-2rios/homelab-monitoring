@@ -7,6 +7,7 @@ groups:
         labels:
           severity: critical
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backupfailed"
           summary: "Backup job {{ $labels.backup_job }} finished with exit code {{ $value }}"
           description: >-
             2 means an archive failed verification, 4 a source was missing,
@@ -18,6 +19,7 @@ groups:
         labels:
           severity: critical
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backuptooold"
           summary: "Backup job {{ $labels.backup_job }} last succeeded {{ $value | printf \"%.0f\" }} hours ago"
           description: >-
             The nightly timer should produce a successful run every 24 hours.
@@ -29,6 +31,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backupmetricsmissing"
           summary: "No backup metrics are being reported at all"
           description: >-
             The textfile collector has nothing to read. Either the backup job has
@@ -40,6 +43,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backupproducednothing"
           summary: "Backup job {{ $labels.backup_job }} reported success without writing an archive"
           description: >-
             A run that succeeds and produces zero archives usually means SOURCES
@@ -54,6 +58,7 @@ groups:
         labels:
           severity: warning
         annotations:
+          runbook_url: "https://github.com/Alex-2rios/homelab-monitoring/blob/main/docs/runbooks.md#backupshranksharply"
           summary: "Backup {{ $labels.backup_job }} is half the size it usually is"
           description: >-
             Currently {{ $value | humanize1024 }}B against the weekly average.
