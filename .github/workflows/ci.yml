@@ -48,6 +48,10 @@ jobs:
   stack:
     runs-on: ubuntu-latest
 
+    env:
+      GRAFANA_USER: ci
+      GRAFANA_PASSWORD: ${{ secrets.GRAFANA_PASSWORD || 'ci-throwaway-password' }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -69,7 +73,7 @@ jobs:
       - name: Grafana has the provisioned dashboard
         run: |
           for i in $(seq 1 20); do
-            if curl -sf -u admin:admin "http://localhost:3000/api/search?query=Homelab" | grep -q "Homelab overview"; then exit 0; fi
+            if curl -sf -u "$GRAFANA_USER:$GRAFANA_PASSWORD" "http://localhost:3000/api/search?query=Homelab" | grep -q "Homelab overview"; then exit 0; fi
             sleep 5
           done
           docker compose logs grafana
