@@ -79,6 +79,24 @@ That fires when a disk is *going* to fill within a day, not once it already has.
 threshold tells you about a problem you now have to fix at 2am. This one tells you the afternoon
 before.
 
+## The dashboard is checked too
+
+A dashboard that quietly stops returning data because a metric was renamed looks exactly like a
+quiet system. `scripts/check-dashboard.sh` pulls every query out of the dashboard JSON and runs
+it against the running Prometheus:
+
+```
+checking 22 dashboard queries against http://localhost:9090
+
+  [ ok ]   sum(up)
+  [ ok ]   100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+  ...
+all 22 queries parse against the running prometheus
+```
+
+It runs in CI in the same job that brings the stack up, so a panel with a typo in its PromQL
+fails the build instead of rendering an empty graph nobody looks at.
+
 ## Proving the alerts work
 
 ```bash
