@@ -70,6 +70,9 @@ jobs:
           docker compose logs prometheus
           exit 1
 
+      - name: Every dashboard query has to parse
+        run: ./scripts/check-dashboard.sh
+
       - name: Grafana has the provisioned dashboard
         run: |
           for i in $(seq 1 20); do
