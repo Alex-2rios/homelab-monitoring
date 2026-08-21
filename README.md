@@ -6,6 +6,8 @@ Prometheus, Grafana, Alertmanager and three exporters, watching my own machines.
 `docker compose up` and you have metrics, dashboards and alerts that have been tested by actually
 breaking things.
 
+![Architecture](docs/architecture.svg)
+
 ## What it watches
 
 | Component | Port | What it gives you |
